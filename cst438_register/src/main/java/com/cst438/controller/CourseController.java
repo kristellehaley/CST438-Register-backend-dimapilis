@@ -25,7 +25,17 @@ public class CourseController {
 	public void updateCourseGrades( @RequestBody CourseDTOG courseDTO, @PathVariable("course_id") int course_id) {
 		
 		//TODO  complete this method in homework 4
+		CourseDTOG.GradeDTO gradeDTO = new CourseDTOG.GradeDTO();
 		
+		Enrollment e = enrollmentRepository.findByEmailAndCourseId(gradeDTO.student_email, courseDTO.course_id);
+		
+		if (e != null) {
+			e.setCourseGrade(gradeDTO.grade);
+			enrollmentRepository.save(e);
+		}
+		else {
+			throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "Could not find enrollment by email: " + gradeDTO.student_email );
+		}
 	}
 
 }
