@@ -5,7 +5,9 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.cst438.domain.CourseDTOG;
 import com.cst438.domain.Enrollment;
@@ -34,6 +36,8 @@ public class GradebookServiceMQ extends GradebookService {
 	public void enrollStudent(String student_email, String student_name, int course_id) {
 		 
 		//TODO  complete this method in homework 4
+		EnrollmentDTO enrollmentDTO = new EnrollmentDTO(student_email, student_name, course_id);
+		this.rabbitTemplate.convertAndSend(gradebookQueue.getName(), enrollmentDTO);
 		
 	}
 	
@@ -42,6 +46,18 @@ public class GradebookServiceMQ extends GradebookService {
 	public void receive(CourseDTOG courseDTOG) {
 		
 		//TODO  complete this method in homework 4
+		
+		CourseDTOG.GradeDTO gradeDTO = new CourseDTOG.GradeDTO();
+		
+		Enrollment e = enrollmentRepository.findByEmailAndCourseId(gradeDTO.student_email, courseDTOG.course_id);
+		
+		if (e != null) {
+			e.setCourseGrade(gradeDTO.grade);
+			enrollmentRepository.save(e);
+		}
+		else {
+			throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "Could not find enrollment by email: " + gradeDTO.student_email );
+		}
 		
 	}
 	
